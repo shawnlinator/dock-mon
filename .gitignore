@@ -1,2 +1,11 @@
 # Ignore IntelliJ IDEA project files
 .idea/
+
+# Grafana runtime state (sqlite db, sessions, rendered exports) - not source, not portable
+grafana-data/
+
+# Leftover empty bind-mount dir; Prometheus actually uses the prometheus-data named volume
+prometheus/data/
+
+# Old local backup checkout of an earlier version of this repo
+dock-mon-bak/

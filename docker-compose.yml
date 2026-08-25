@@ -5,16 +5,16 @@ services:
     container_name: monitoring-grafana
     image: grafana/grafana:latest
     hostname: rpi-grafana
-    restart: unless-stopped
+    restart: on-failure:5
     user: "472"
     networks:
       - internal
     ports:
-      - "3000:3000"
+      - "3010:3000"
     env_file:
       - ./grafana/.env
     volumes:
-      - grafana-data:/var/lib/grafana
+      - ./grafana-data:/var/lib/grafana
       - ./grafana/provisioning:/etc/grafana/provisioning
     depends_on:
       - prometheus
@@ -37,7 +37,7 @@ services:
     container_name: monitoring-cadvisor
     image: gcr.io/cadvisor/cadvisor:latest
     hostname: rpi-cadvisor
-    restart: unless-stopped
+    restart: on-failure:5
     cap_add:
       - SYS_ADMIN
     networks:
@@ -77,7 +77,7 @@ services:
     container_name: monitoring-node-exporter
     image: prom/node-exporter:latest
     hostname: rpi-exporter
-    restart: unless-stopped
+    restart: on-failure:5
     networks:
       - internal
     expose:
@@ -113,7 +113,7 @@ services:
     container_name: monitoring-prometheus
     image: prom/prometheus:latest
     hostname: rpi-prometheus
-    restart: unless-stopped
+    restart: on-failure:5
     user: "nobody"
     command:
       - '--config.file=/etc/prometheus/prometheus.yml'
@@ -124,6 +124,8 @@ services:
       - '--web.console.templates=/usr/share/prometheus/consoles'
     networks:
       - internal
+    extra_hosts:
+      - "host.docker.internal:host-gateway"
     expose:
       - 9090
     volumes:
@@ -150,10 +152,6 @@ services:
     mem_reservation: 512m
 
 volumes:
-  grafana-data:
-    labels:
-      - "com.example.description=Grafana Persistent Data"
-      - "com.example.service=monitoring"
   prometheus-data:
     labels:
       - "com.example.description=Prometheus Persistent Data"
@@ -165,8 +163,8 @@ networks:
     ipam:
       driver: default
       config:
-        - subnet: 172.20.0.0/16
-          gateway: 172.20.0.1
+        - subnet: 173.21.0.0/16
+          gateway: 173.21.0.1
     labels:
       - "com.example.description=Monitoring Network"
       - "com.example.service=monitoring"
