@@ -1,5 +1,9 @@
 # Raspberry Pi & Docker Monitoring
 
+## About This Repo
+
+This is a **patch fork** of [oijkn/Docker-Raspberry-PI-Monitoring](https://github.com/oijkn/Docker-Raspberry-PI-Monitoring) (`upstream`), deployed on `proxmox-ubuntu24`. `main` tracks `upstream/main` and layers a small set of site-specific customizations on top as regular commits, rather than diverging into a rewrite. See [Local Customizations](#local-customizations) for what's patched here, and [Updating from Upstream](#updating-from-upstream) for how to pull in template changes without losing them.
+
 ## Hit the Star! :star:
 
 If you find this repository useful, please consider giving it a star. Your support is greatly appreciated! :pray:
@@ -97,6 +101,31 @@ This dashboard is intended to help you get started with monitoring your Raspberr
 
 Here is a screenshot of the dashboard:
 ![Grafana Dashboard](grafana/screenshots/dashboard.png)
+
+## Local Customizations
+
+These are the patches this fork carries on top of upstream `main` (see the "Customize monitoring stack for proxmox-ubuntu24" commit for the exact diff):
+
+- Grafana published on host port **3010** instead of 3000, `grafana-data` bind-mounted (`./grafana-data`) instead of a named volume, and all services use `restart: on-failure:5` instead of `unless-stopped` to avoid boot loops during `vdb` disk instability.
+- Prometheus scrapes an added `mergerfs-exporter` job so mergerfs disk I/O (`vdd`-`vdk`, not visible to cAdvisor per-container metrics) shows up somewhere.
+- Dashboard (`grafana/provisioning/dashboards/rpi-monitoring.json`): renamed the per-container I/O panels, added a "Disk IO - mergerfs (shared, not per-container)" panel plus cache-inclusive memory panels, and positioned the mergerfs panel directly below the per-container disk I/O panels.
+- `.gitignore` additions for local runtime/backup directories (`grafana-data/`, `prometheus/data/`, `dock-mon-bak/`).
+
+## Updating from Upstream
+
+Because this fork shares real commit history with `upstream/main`, pulling in template updates is a normal merge:
+
+```bash
+git fetch upstream
+git merge upstream/main
+# resolve any conflicts (expected to be rare/small, since local changes are isolated
+# to a handful of files — see Local Customizations above)
+git push origin main
+```
+
+Equivalent alternative: click **Sync fork** on the GitHub repo page to fast-forward `origin/main` from upstream (when there's no conflict), then `git pull` locally.
+
+After syncing, re-deploy with `docker-compose up -d` and re-check that the grafana provisioning volume picked up any dashboard changes (~10s, per the provisioning watcher).
 
 ## License
 
